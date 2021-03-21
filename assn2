@@ -1,0 +1,116 @@
+#!/bin/bash
+#--------------------Christian Pedro-------------------
+
+userfile=''
+database=''
+absolutedatabase=''
+
+function run() {
+	echo -n "% " 
+	read -p " " userinput arg2file arg3errorvar
+	if [[ $userinput == 'quit' ]] 
+		then 
+			exit 
+	elif [[ $userinput == 'setdb' ]]
+		then 
+			if [[ ! -z $arg3errorvar && -f $arg2file ]]
+				then
+					echo "Database set to $arg2file."
+					echo "Extra arguments ignored."
+					userfile="$(basename -- $arg2file)"
+					database=$arg2file
+					run
+			elif [[ -z $arg2file ]]
+				then 
+					echo "Missing Argument."
+					run
+			elif [[ -f $arg2file && -r $arg2file ]]
+				then 
+					echo "Database set to $arg2file"
+					userfile="$(basename -- $arg2file)"
+					database=$arg2file
+					run
+			elif [[ -f $arg2file ]]
+				then
+					echo "File $arg2file is not readable."
+					run
+			else
+				touch "$arg2file"
+				echo "File $arg2file created. Database set to $arg2file."
+				userfile="$(basename -- $arg2file)"
+				database=$arg2file
+				run
+			fi
+	elif [[ $userinput == 'add' ]]
+		then
+			if [[ $database == '' ]]
+				then
+				echo "Database has not been set."
+				run
+			else
+				if [[ -z $arg3errorvar ]]
+					then 
+						echo "Incorrect syntax."
+						run
+				else
+					if grep -qw "$arg2file" $(pwd)/$database
+						then
+							sed -i '/'$arg2file'/c '$arg2file':'$arg3errorvar'' $database
+							echo "$arg2file has been updated to $arg3errorvar"
+							run
+					else 
+								echo "$arg2file:$arg3errorvar" >> $database
+								echo "$arg2file:$arg3errorvar has been added to the database."
+								run
+					 fi
+					
+				fi	
+
+			fi
+	elif [[ $userinput == 'delete' ]]
+		then 
+			if [[ $database == '' ]]
+				then
+					echo "Database has not been set."
+					run
+			else
+				if [[ $arg3errorvar ]]
+					then
+						echo "Incorrect Syntax."
+						run
+				else 
+					if grep -qw "$arg2file" $database
+						then 
+							sed -i '/'$arg2file'/d' $database
+							echo "$arg2file has been deleted from $userfile."
+							run
+					else
+						echo "$arg2file does not exist in $userfile."
+						run
+					fi
+				fi
+			fi
+		elif [[ $userinput == 'printdb' ]]
+			then 
+				if [[ $database == '' ]]
+					then 
+						echo "Database has not been set."
+						run
+				else
+					if [[ $arg2file ]]
+						then 
+							echo "Incorrect syntax."
+							run
+					else
+						cat $database
+						run
+					fi
+				fi
+	else 
+		echo "Unrecognized command."
+		run
+
+	fi
+}
+
+run
